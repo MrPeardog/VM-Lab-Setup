@@ -94,6 +94,11 @@
   ul.check label { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
   ul.check input { width: 20px; height: 20px; margin-top: 3px; flex: none; accent-color: var(--lan); }
 
+  /* Video */
+  .video { margin: 0 0 24px; }
+  .video video { display: block; width: 100%; height: auto; border-radius: 10px; background: #000; }
+  .video figcaption { color: var(--muted); font-size: 0.92rem; margin-top: 8px; }
+
   :focus-visible { outline: 3px solid var(--lan); outline-offset: 2px; }
 
   @media (max-width: 560px) {
@@ -214,6 +219,13 @@
 
 <h2>Part 2: Install and configure pfSense</h2>
 <p>After this part, pfSense's LAN will be <strong><span class="ip">10.0.0.1/24</span></strong> with its DHCP server turned off.</p>
+<figure class="video" style="padding:0;background:none">
+  <video controls preload="metadata" playsinline>
+    <source src="pfsense-install.mp4" type="video/mp4">
+    Your browser can't play this video. <a href="pfsense-install.mp4">Download the pfSense install walkthrough</a>.
+  </video>
+  <figcaption>Watch the full pfSense install and console setup, then follow the steps below.</figcaption>
+</figure>
 <ol class="steps">
   <li>Select the pfSense VM and click <strong>Power on this virtual machine</strong>. Click inside the VM window to type in it (press <strong>Ctrl+Alt</strong> to release your mouse).</li>
   <li>Follow the installer and accept the defaults. If it asks which card is which, choose <strong>em0 for WAN</strong> (DHCP) and <strong>em1 for LAN</strong>.</li>
