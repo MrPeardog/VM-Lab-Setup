@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab Setup: Three-VM Network in VMware Workstation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1B2A3A;
+    --muted: #4E5D6C;
+    --paper: #FFFFFF;
+    --wash: #EEF3F8;
+    --rule: #D3DCE6;
+    --lan: #1F6FB2;
+    --lan-wash: #E3EEF8;
+    --wan: #B86E00;
+    --wan-wash: #FBF0DF;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 17px/1.6 "IBM Plex Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  main { max-width: 860px; margin: 0 auto; padding: 40px 24px 64px; }
+  h1 { font-size: 2.1rem; line-height: 1.2; margin: 0 0 8px; font-weight: 700; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0 0 28px; max-width: 64ch; }
+  h2 {
+    font-size: 1.45rem; line-height: 1.3; margin: 56px 0 12px; font-weight: 600;
+    padding-top: 20px; border-top: 2px solid var(--ink);
+  }
+  h3 { font-size: 1.15rem; margin: 32px 0 8px; font-weight: 600; }
+  p { margin: 0 0 14px; max-width: 72ch; }
+  strong { font-weight: 600; }
+  code, .ip {
+    font-family: "IBM Plex Mono", Consolas, "Courier New", monospace;
+    font-size: 0.92em; font-weight: 500;
+  }
+  code { background: var(--wash); padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+
+  /* Topology */
+  figure { margin: 0 0 28px; padding: 20px; background: var(--wash); border-radius: 10px; }
+  figure svg { display: block; width: 100%; height: auto; }
+  figcaption { color: var(--muted); font-size: 0.92rem; margin-top: 10px; }
+  .key { display: inline-flex; align-items: center; gap: 6px; margin-right: 16px; }
+  .swatch { width: 22px; height: 4px; border-radius: 2px; display: inline-block; }
+
+  /* Tables */
+  .scroll { overflow-x: auto; margin: 0 0 18px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-weight: 600; background: var(--wash); white-space: nowrap; }
+  tr.is-wan td:nth-child(3) { color: var(--wan); font-weight: 600; }
+  tr.is-lan td:nth-child(3) { color: var(--lan); font-weight: 600; }
+
+  /* Callouts */
+  .callout {
+    border-left: 5px solid var(--lan); background: var(--lan-wash);
+    padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 0 0 20px;
+  }
+  .callout.warn { border-color: var(--wan); background: var(--wan-wash); }
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* Steps */
+  ol.steps { list-style: none; counter-reset: step; padding: 0; margin: 0 0 18px; }
+  ol.steps > li {
+    counter-increment: step; position: relative;
+    padding: 10px 0 10px 50px; border-bottom: 1px solid var(--rule);
+  }
+  ol.steps > li:last-child { border-bottom: 0; }
+  ol.steps > li::before {
+    content: counter(step); position: absolute; left: 0; top: 9px;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--ink); color: #fff; font-weight: 600; font-size: 0.9rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  ol.steps > li.key-step::before { background: var(--lan); }
+  ol.steps ul { margin: 8px 0 2px; padding-left: 20px; }
+  ol.steps ul li { margin: 4px 0; }
+  .nat-to-local {
+    display: inline-block; margin-top: 4px; font-weight: 600;
+  }
+  .nat-to-local .from { color: var(--wan); text-decoration: line-through; }
+  .nat-to-local .to { color: var(--lan); }
+
+  /* Checklist */
+  ul.check { list-style: none; padding: 0; margin: 0 0 18px; }
+  ul.check li { padding: 6px 0; }
+  ul.check label { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
+  ul.check input { width: 20px; height: 20px; margin-top: 3px; flex: none; accent-color: var(--lan); }
+
+  :focus-visible { outline: 3px solid var(--lan); outline-offset: 2px; }
+
+  @media (max-width: 560px) {
+    body { font-size: 16px; }
+    h1 { font-size: 1.7rem; }
+    figure { padding: 12px; }
+  }
+  @media print {
+    main { padding: 0; }
+    h2 { break-after: avoid; }
+    ol.steps > li, tr { break-inside: avoid; }
+    figure { background: none; border: 1px solid var(--rule); }
+  }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Lab Setup: Three-VM Network in VMware Workstation</h1>
+<p class="sub">You will build three virtual machines on a private network called <strong>Local</strong>, with pfSense acting as the router between Local and the internet. pfSense reaches the internet through VMware's built-in NAT adapter (the WAN). Nothing on Local uses DHCP: every address is typed in by hand.</p>
+
+<figure>
+  <svg viewBox="0 0 720 300" role="img" aria-labelledby="topo-title">
+    <title id="topo-title">Network diagram: Internet connects through VMware NAT to pfSense's WAN. pfSense's LAN at 10.0.0.1 connects to the Local segment, which links Windows 10 at 10.0.0.10 and Ubuntu at 10.0.0.20.</title>
+    <g font-family="IBM Plex Sans, Segoe UI, Arial, sans-serif" fill="#1B2A3A">
+      <!-- WAN links -->
+      <line x1="160" y1="68" x2="230" y2="68" stroke="#B86E00" stroke-width="4"/>
+      <line x1="370" y1="68" x2="440" y2="68" stroke="#B86E00" stroke-width="4"/>
+      <!-- LAN links -->
+      <line x1="600" y1="106" x2="600" y2="170" stroke="#1F6FB2" stroke-width="4"/>
+      <line x1="230" y1="170" x2="620" y2="170" stroke="#1F6FB2" stroke-width="6" stroke-linecap="round"/>
+      <line x1="270" y1="170" x2="270" y2="212" stroke="#1F6FB2" stroke-width="4"/>
+      <line x1="530" y1="170" x2="530" y2="212" stroke="#1F6FB2" stroke-width="4"/>
+
+      <!-- Internet -->
+      <rect x="20" y="40" width="140" height="56" rx="28" fill="#fff" stroke="#1B2A3A" stroke-width="2"/>
+      <text x="90" y="74" text-anchor="middle" font-size="17" font-weight="600">Internet</text>
+
+      <!-- VMware NAT -->
+      <rect x="230" y="40" width="140" height="56" rx="8" fill="#FBF0DF" stroke="#B86E00" stroke-width="2"/>
+      <text x="300" y="64" text-anchor="middle" font-size="16" font-weight="600">VMware NAT</text>
+      <text x="300" y="84" text-anchor="middle" font-size="13" fill="#4E5D6C">WAN, automatic IP</text>
+
+      <!-- pfSense -->
+      <rect x="440" y="30" width="260" height="76" rx="8" fill="#1B2A3A"/>
+      <text x="570" y="58" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">pfSense</text>
+      <text x="505" y="88" text-anchor="middle" font-size="13" fill="#F3C67A">em0: WAN</text>
+      <text x="635" y="88" text-anchor="middle" font-size="13" fill="#9CC8EE">em1: 10.0.0.1</text>
+
+      <!-- Segment label -->
+      <text x="230" y="158" font-size="14" font-weight="600" fill="#1F6FB2">LAN Segment "Local"  (10.0.0.0/24)</text>
+
+      <!-- Windows -->
+      <rect x="170" y="212" width="200" height="64" rx="8" fill="#fff" stroke="#1F6FB2" stroke-width="2"/>
+      <text x="270" y="239" text-anchor="middle" font-size="16" font-weight="600">Windows 10</text>
+      <text x="270" y="261" text-anchor="middle" font-size="14" font-family="IBM Plex Mono, Consolas, monospace">10.0.0.10</text>
+
+      <!-- Ubuntu -->
+      <rect x="430" y="212" width="200" height="64" rx="8" fill="#fff" stroke="#1F6FB2" stroke-width="2"/>
+      <text x="530" y="239" text-anchor="middle" font-size="16" font-weight="600">Ubuntu</text>
+      <text x="530" y="261" text-anchor="middle" font-size="14" font-family="IBM Plex Mono, Consolas, monospace">10.0.0.20</text>
+    </g>
+  </svg>
+  <figcaption>
+    <span class="key"><span class="swatch" style="background:var(--wan)"></span>NAT (WAN side)</span>
+    <span class="key"><span class="swatch" style="background:var(--lan)"></span>LAN Segment "Local"</span>
+  </figcaption>
+</figure>
+
+<div class="scroll">
+<table>
+  <thead>
+    <tr><th>VM</th><th>Adapter</th><th>VMware network setting</th><th>IP address</th><th>Subnet mask</th><th>Gateway</th><th>DNS</th></tr>
+  </thead>
+  <tbody>
+    <tr class="is-wan"><td>pfSense</td><td>Adapter 1 (WAN)</td><td>NAT</td><td>Automatic (from VMware)</td><td>Automatic</td><td>Automatic</td><td>Automatic</td></tr>
+    <tr class="is-lan"><td>pfSense</td><td>Adapter 2 (LAN)</td><td>LAN Segment: Local</td><td class="ip">10.0.0.1</td><td class="ip">255.255.255.0 (/24)</td><td>None</td><td>None</td></tr>
+    <tr class="is-lan"><td>Windows 10</td><td>Network Adapter</td><td>LAN Segment: Local</td><td class="ip">10.0.0.10</td><td class="ip">255.255.255.0</td><td class="ip">10.0.0.1</td><td class="ip">8.8.8.8</td></tr>
+    <tr class="is-lan"><td>Ubuntu</td><td>Network Adapter</td><td>LAN Segment: Local</td><td class="ip">10.0.0.20</td><td class="ip">255.255.255.0</td><td class="ip">10.0.0.1</td><td class="ip">8.8.8.8</td></tr>
+  </tbody>
+</table>
+</div>
+<p>All traffic from Windows and Ubuntu to the internet must pass through pfSense. That only works if their adapters are on <strong>Local</strong>, not NAT.</p>
+
+<h2>Before you begin</h2>
+<p>Build the VMs in this order: <strong>pfSense first</strong>, then Windows 10, then Ubuntu. You create the Local network while building pfSense, so it must exist before the other two.</p>
+<ul class="check">
+  <li><label><input type="checkbox"> <span>VMware Workstation is installed and opens normally.</span></label></li>
+  <li><label><input type="checkbox"> <span>The three ISO files are on your desktop: Windows 10, Ubuntu, and pfSense.</span></label></li>
+  <li><label><input type="checkbox"> <span>The pfSense file ends in <strong>.iso</strong>. If it ends in <strong>.iso.gz</strong>, right-click it and extract it first (7-Zip works). VMware cannot use the .gz file.</span></label></li>
+  <li><label><input type="checkbox"> <span>You have about 110 GB of free disk space and at least 16 GB of RAM on the host.</span></label></li>
+</ul>
+<div class="callout">
+  <p><strong>Tip used throughout this lab:</strong> In each New Virtual Machine wizard, choose <strong>"I will install the operating system later."</strong> You attach the ISO afterward in Customize Hardware. This stops VMware's "Easy Install" from running on its own and skipping steps you need to see.</p>
+</div>
+
+<h2>Part 1: Create the pfSense VM and the Local network</h2>
+<p>pfSense needs <strong>two</strong> network cards. The one VMware gives you by default is NAT, and it stays NAT: that is the WAN for the whole lab. You will add a second card for the LAN and connect it to a new LAN Segment named <strong>Local</strong>.</p>
+<ol class="steps">
+  <li>In VMware, click <strong>File &gt; New Virtual Machine</strong>. Choose <strong>Typical</strong> and click <strong>Next</strong>.</li>
+  <li>Choose <strong>I will install the operating system later</strong> and click <strong>Next</strong>.</li>
+  <li>Guest operating system: <strong>Other</strong>. Version: <strong>FreeBSD 14 64-bit</strong> (or the newest 64-bit FreeBSD in the list). Click <strong>Next</strong>.</li>
+  <li>Name the VM <strong>pfSense</strong> and click <strong>Next</strong>.</li>
+  <li>Set the disk size to <strong>20 GB</strong>, choose <strong>Store virtual disk as a single file</strong>, and click <strong>Next</strong>.</li>
+  <li>Click <strong>Customize Hardware</strong>.</li>
+  <li>Set <strong>Memory</strong> to <strong>2048 MB</strong> and <strong>Processors</strong> to <strong>1</strong>.</li>
+  <li>Select <strong>New CD/DVD</strong>. Choose <strong>Use ISO image file</strong>, click <strong>Browse</strong>, and pick the pfSense ISO on your desktop. Make sure <strong>Connect at power on</strong> is checked.</li>
+  <li>Select <strong>Network Adapter</strong>. Leave it on <strong>NAT</strong>. This is your WAN. Do not change it.</li>
+  <li class="key-step">Click <strong>Add...</strong> at the bottom, choose <strong>Network Adapter</strong>, and click <strong>Finish</strong>. A second card named <strong>Network Adapter 2</strong> appears in the list.</li>
+  <li class="key-step">Select <strong>Network Adapter 2</strong> and choose <strong>LAN segment</strong>.</li>
+  <li class="key-step">Click the <strong>LAN Segments...</strong> button, click <strong>Add</strong>, type <strong>Local</strong>, and click <strong>OK</strong>.</li>
+  <li class="key-step">Back on Network Adapter 2, pick <strong>Local</strong> from the LAN segment dropdown.</li>
+  <li>Click <strong>Close</strong>, then <strong>Finish</strong>.</li>
+</ol>
+<div class="callout">
+  <p><strong>Check yourself:</strong> the pfSense hardware list now shows two network adapters: <strong>Network Adapter = NAT</strong> and <strong>Network Adapter 2 = LAN Segment (Local)</strong>. If you only see one, repeat steps 10 to 13.</p>
+</div>
+
+<h2>Part 2: Install and configure pfSense</h2>
+<p>After this part, pfSense's LAN will be <strong><span class="ip">10.0.0.1/24</span></strong> with its DHCP server turned off.</p>
+<ol class="steps">
+  <li>Select the pfSense VM and click <strong>Power on this virtual machine</strong>. Click inside the VM window to type in it (press <strong>Ctrl+Alt</strong> to release your mouse).</li>
+  <li>Follow the installer and accept the defaults. If it asks which card is which, choose <strong>em0 for WAN</strong> (DHCP) and <strong>em1 for LAN</strong>.</li>
+  <li>When the installer finishes, choose <strong>Reboot</strong>. If the installer starts over after the reboot, go to <strong>VM &gt; Settings &gt; CD/DVD</strong>, uncheck <strong>Connected</strong>, and restart the VM.</li>
+  <li>pfSense boots to a text menu. Look at the top: <strong>WAN (em0)</strong> should show an address from VMware (usually 192.168.x.x), and <strong>LAN (em1)</strong> shows 192.168.1.1.
+    <ul><li>If WAN and LAN look swapped, type <strong>1</strong> (Assign Interfaces). Answer <strong>n</strong> to VLANs, enter <strong>em0</strong> for WAN and <strong>em1</strong> for LAN, then <strong>y</strong> to proceed.</li></ul>
+  </li>
+  <li>Type <strong>2</strong> (Set interface(s) IP address) and press <strong>Enter</strong>. Select <strong>2</strong> for <strong>LAN</strong>.</li>
+  <li>Answer the prompts exactly as follows:
+    <div class="scroll" style="margin-top:8px">
+    <table>
+      <thead><tr><th>Prompt</th><th>Your answer</th></tr></thead>
+      <tbody>
+        <tr><td>Configure IPv4 address LAN interface via DHCP?</td><td><code>n</code></td></tr>
+        <tr><td>Enter the new LAN IPv4 address</td><td><code>10.0.0.1</code></td></tr>
+        <tr><td>Enter the new LAN IPv4 subnet bit count</td><td><code>24</code></td></tr>
+        <tr><td>Upstream gateway for LAN</td><td>Press <strong>Enter</strong> (none)</td></tr>
+        <tr><td>Configure IPv6 address via DHCP6?</td><td><code>n</code>, then press <strong>Enter</strong> for no IPv6 address</td></tr>
+        <tr><td>Do you want to enable the DHCP server on LAN?</td><td><code>n</code></td></tr>
+        <tr><td>Do you want to revert to HTTP as the webConfigurator protocol?</td><td><code>n</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </li>
+  <li>Press <strong>Enter</strong> to return to the menu. Confirm the top now reads <strong>LAN (lan) -&gt; em1 -&gt; v4: 10.0.0.1/24</strong>.</li>
+</ol>
+<p>Leave pfSense running for the rest of the lab. The other VMs cannot reach anything without it.</p>
+
+<h2>Part 3: Create and configure the Windows 10 VM</h2>
+<div class="callout warn">
+  <p><strong>Reminder: VMware sets every new VM's network adapter to NAT by default. You must change the Windows adapter from NAT to the LAN Segment "Local" (step 5).</strong> If you skip this, Windows bypasses pfSense entirely.</p>
+</div>
+<ol class="steps">
+  <li>Click <strong>File &gt; New Virtual Machine</strong>, choose <strong>Typical</strong>, then <strong>I will install the operating system later</strong>.</li>
+  <li>Guest operating system: <strong>Microsoft Windows</strong>. Version: <strong>Windows 10 x64</strong>. Name the VM <strong>Windows10</strong>.</li>
+  <li>Set the disk to <strong>60 GB</strong>, single file. Click <strong>Customize Hardware</strong>.</li>
+  <li>Set <strong>Memory</strong> to <strong>4096 MB</strong> and <strong>Processors</strong> to <strong>2</strong>. Under <strong>New CD/DVD</strong>, choose <strong>Use ISO image file</strong> and browse to the Windows 10 ISO. Check <strong>Connect at power on</strong>.</li>
+  <li class="key-step">Select <strong>Network Adapter</strong>. <strong>Change it from NAT to LAN segment</strong> and pick <strong>Local</strong> from the dropdown.<br>
+    <span class="nat-to-local"><span class="from">NAT</span> &nbsp;to&nbsp; <span class="to">LAN Segment: Local</span></span></li>
+  <li>Click <strong>Close</strong>, then <strong>Finish</strong>.</li>
+  <li>Power on the VM. When you see <strong>"Press any key to boot from CD or DVD,"</strong> click inside the window and press a key right away.</li>
+  <li>In Windows Setup:
+    <ul>
+      <li>Choose your language and click <strong>Install now</strong>.</li>
+      <li>Click <strong>I don't have a product key</strong>, select <strong>Windows 10 Pro</strong>, and accept the license.</li>
+      <li>Choose <strong>Custom: Install Windows only</strong>, select <strong>Drive 0 Unallocated Space</strong>, and click <strong>Next</strong>.</li>
+    </ul>
+  </li>
+  <li>After the restarts, Windows has no internet yet, which is expected. When asked to connect, choose <strong>I don't have internet</strong>, then <strong>Continue with limited setup</strong>. Create a local user name and password, and turn off the privacy options.</li>
+  <li>Install VMware Tools: click <strong>VM &gt; Install VMware Tools</strong>, open File Explorer, run <strong>setup64.exe</strong> from the DVD drive, accept the defaults, and restart.</li>
+  <li class="key-step">Set the static IP:
+    <ul>
+      <li>Press <strong>Windows+R</strong>, type <code>ncpa.cpl</code>, and press <strong>Enter</strong>.</li>
+      <li>Right-click <strong>Ethernet0</strong> and choose <strong>Properties</strong>.</li>
+      <li>Select <strong>Internet Protocol Version 4 (TCP/IPv4)</strong> and click <strong>Properties</strong>.</li>
+      <li>Choose <strong>Use the following IP address</strong> and enter: IP address <strong class="ip">10.0.0.10</strong>, subnet mask <strong class="ip">255.255.255.0</strong>, default gateway <strong class="ip">10.0.0.1</strong>.</li>
+      <li>Choose <strong>Use the following DNS server addresses</strong> and enter preferred DNS <strong class="ip">8.8.8.8</strong>.</li>
+      <li>Click <strong>OK</strong>, then <strong>Close</strong>.</li>
+    </ul>
+  </li>
+</ol>
+
+<h2>Part 4: Create and configure the Ubuntu VM</h2>
+<div class="callout warn">
+  <p><strong>Reminder: just like Windows, the Ubuntu adapter starts on NAT. You must change it from NAT to the LAN Segment "Local" (step 4).</strong></p>
+</div>
+<ol class="steps">
+  <li>Click <strong>File &gt; New Virtual Machine</strong>, choose <strong>Typical</strong>, then <strong>I will install the operating system later</strong>.</li>
+  <li>Guest operating system: <strong>Linux</strong>. Version: <strong>Ubuntu 64-bit</strong>. Name the VM <strong>Ubuntu</strong>. Set the disk to <strong>25 GB</strong>, single file, and click <strong>Customize Hardware</strong>.</li>
+  <li>Set <strong>Memory</strong> to <strong>4096 MB</strong> and <strong>Processors</strong> to <strong>2</strong>. Under <strong>New CD/DVD</strong>, choose <strong>Use ISO image file</strong> and browse to the Ubuntu ISO. Check <strong>Connect at power on</strong>.</li>
+  <li class="key-step">Select <strong>Network Adapter</strong>. <strong>Change it from NAT to LAN segment</strong> and pick <strong>Local</strong> from the dropdown.<br>
+    <span class="nat-to-local"><span class="from">NAT</span> &nbsp;to&nbsp; <span class="to">LAN Segment: Local</span></span></li>
+  <li>Click <strong>Close</strong>, then <strong>Finish</strong>, and power on the VM.</li>
+  <li>At the boot menu, choose <strong>Try or Install Ubuntu</strong>. In the installer:
+    <ul>
+      <li>Pick your language and keyboard.</li>
+      <li>On the network screen, choose <strong>Do not connect to the internet</strong> (you'll set the IP after install).</li>
+      <li>Choose <strong>Install Ubuntu</strong>, <strong>Interactive installation</strong>, and <strong>Default selection</strong>.</li>
+      <li>Choose <strong>Erase disk and install Ubuntu</strong>. This only erases the VM's virtual disk, not your computer.</li>
+      <li>Create your user name and password, pick your time zone, and click <strong>Install</strong>.</li>
+    </ul>
+  </li>
+  <li>When it finishes, click <strong>Restart now</strong>. If asked to remove the installation medium, press <strong>Enter</strong>.</li>
+  <li class="key-step">Log in and set the static IP:
+    <ul>
+      <li>Open <strong>Settings &gt; Network</strong>. Next to <strong>Wired</strong>, click the <strong>gear icon</strong>.</li>
+      <li>Open the <strong>IPv4</strong> tab and choose <strong>Manual</strong>.</li>
+      <li>Enter address <strong class="ip">10.0.0.20</strong>, netmask <strong class="ip">255.255.255.0</strong>, gateway <strong class="ip">10.0.0.1</strong>.</li>
+      <li>Under <strong>DNS</strong>, turn <strong>Automatic</strong> off and enter <strong class="ip">8.8.8.8</strong>.</li>
+      <li>Click <strong>Apply</strong>, then switch <strong>Wired</strong> off and back on so the new settings load.</li>
+    </ul>
+  </li>
+</ol>
+
+<h2>Part 5: Test the network</h2>
+<p>All three VMs must be powered on. Each test should get replies unless noted.</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>From</th><th>Command</th><th>What it proves</th></tr></thead>
+  <tbody>
+    <tr><td>Windows (Command Prompt)</td><td><code>ping 10.0.0.1</code></td><td>Windows reaches pfSense</td></tr>
+    <tr><td>Windows</td><td><code>ping 10.0.0.20</code></td><td>Windows reaches Ubuntu</td></tr>
+    <tr><td>Windows</td><td><code>ping 8.8.8.8</code></td><td>pfSense is routing to the internet</td></tr>
+    <tr><td>Windows</td><td><code>ping google.com</code></td><td>DNS lookups work</td></tr>
+    <tr><td>Ubuntu (Terminal)</td><td><code>ping -c 4 10.0.0.1</code></td><td>Ubuntu reaches pfSense</td></tr>
+    <tr><td>Ubuntu</td><td><code>ping -c 4 8.8.8.8</code></td><td>pfSense is routing to the internet</td></tr>
+    <tr><td>Ubuntu</td><td><code>ping -c 4 google.com</code></td><td>DNS lookups work</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="callout warn">
+  <p><strong>Expected failure:</strong> <code>ping 10.0.0.10</code> from Ubuntu usually times out. Windows Firewall blocks incoming ping by default, so this does not mean your network is broken.</p>
+</div>
+
+<h3>Log in to pfSense</h3>
+<ol class="steps">
+  <li>On the Windows VM, open a browser and go to <strong class="ip">https://10.0.0.1</strong>.</li>
+  <li>At the certificate warning, click <strong>Advanced</strong>, then <strong>Continue</strong>. pfSense uses a self-signed certificate, so this warning is normal.</li>
+  <li>Log in with user name <strong>admin</strong> and password <strong>pfsense</strong>.</li>
+  <li>Click through the Setup Wizard. On the LAN page, keep <strong class="ip">10.0.0.1 / 24</strong>.</li>
+  <li>When the wizard asks for a new admin password, set one and write it down. Click <strong>Finish</strong>.</li>
+</ol>
+
+<h2>Troubleshooting</h2>
+<p>Most problems in this lab come from a network adapter left on NAT. Check that first.</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr></thead>
+  <tbody>
+    <tr><td>Windows or Ubuntu can't ping 10.0.0.1</td><td>Adapter is still on NAT, or on a different segment</td><td>VM &gt; Settings &gt; Network Adapter &gt; LAN segment &gt; <strong>Local</strong></td></tr>
+    <tr><td>"Local" is missing from the dropdown</td><td>LAN Segments are saved per computer, so copied VMs lose them</td><td>Click <strong>LAN Segments... &gt; Add</strong>, create <strong>Local</strong> again, and reselect it on all three VMs</td></tr>
+    <tr><td>pfSense LAN still shows 192.168.1.1</td><td>Console option 2 wasn't completed</td><td>Repeat Part 2, steps 5 to 7</td></tr>
+    <tr><td>WAN has no address, or LAN shows the WAN address</td><td>em0 and em1 are swapped</td><td>Console option <strong>1</strong>: em0 = WAN, em1 = LAN</td></tr>
+    <tr><td>Ping to 8.8.8.8 works but google.com fails</td><td>DNS not set on the client</td><td>Set DNS to <strong class="ip">8.8.8.8</strong></td></tr>
+    <tr><td>Client shows a 169.254.x.x address</td><td>Static IP wasn't saved</td><td>Re-enter the IP settings and click OK/Apply</td></tr>
+    <tr><td>pfSense installer runs again after reboot</td><td>ISO is still connected</td><td>VM &gt; Settings &gt; CD/DVD &gt; uncheck <strong>Connected</strong></td></tr>
+    <tr><td>Can't find the pfSense ISO when browsing</td><td>File is still compressed (.iso.gz)</td><td>Extract it to a .iso first</td></tr>
+    <tr><td>Ubuntu can't ping Windows</td><td>Windows Firewall blocks ping</td><td>Expected; not a network problem</td></tr>
+  </tbody>
+</table>
+</div>
+
+</main>
+</body>
+</html>
